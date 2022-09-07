@@ -213,7 +213,7 @@ def login(request):
 ```
 
 - 현재 로그인 되어있는 유저 정보 출력하기  
-![img_2.png](img_2.png)
+![img_2.png](img_2.png)  
 어떻게 base 템플릿에서 context 데이터 없이 user 변수를 사용할 수 있는 걸까?  
   &rightarrow; settings.py의 context processors 설정 값 때문이다.
   
@@ -243,7 +243,7 @@ def login(request):
 > &Rightarrow; 이는 다른사람이 동일한 웹 브라우저를 사용하여 로그인하고,  
 > 이전 사용자의 세션 데이터에서 엑세스하는 것을 방지하기 위함.  
 
->![img_5.png](img_5.png)
+>![img_5.png](img_5.png)  
 >![img_6.png](img_6.png)  
 ---
 ### Authentication with User  
@@ -273,14 +273,14 @@ User Object 와 User CRUD에 대한 이해
 
 >UserCreationForm은 ModelForm이다.  
 >ModelForm 내부에서는 새로만든 accounts.User가 아닌 auth.User로 계속 생성된다.  
->이는 class 내부를 뜯어보면, 
+>이는 class 내부를 뜯어보면,   
 >![img_9.png](img_9.png)  
 >와 같이 model이 User로 지정되어 있다.  
 >
->새로 클래스를 만들어서 정의해준다.
->![img_10.png](img_10.png)  
+>새로 클래스를 만들어서 정의해준다.  
+>![img_10.png](img_10.png)    
 >이때, 위와 같이 직접 참조 해줄수는 있지만, 이를 권장하지 않고 함수를 지원해줘서 아래와 같이 코드를 작성 한다.
->![img_11.png](img_11.png)  
+>![img_11.png](img_11.png)    
 > ##### Django는 User를 직접참조하는것을 좋아하지 않는다.  
 ```python
 # views.py  
@@ -339,7 +339,7 @@ class CustomUserChangeForm(UserChangeForm):
     - Django는 User 클래스를 직접 참조하는 대신 `get_user_model()`을 사용해 참조해야 한다.  
     
 
-- 회원가입 후에 로그인 상태
+- 회원가입 후에 로그인 상태  
 ![img_12.png](img_12.png)  
   
 ---
@@ -602,7 +602,7 @@ def update(request, pk):
 로그인해도, redirect로 가지 않는다.  
 &Rightarrow; form의 action을 비워준다.  
 
-![img_15.png](img_15.png)
+![img_15.png](img_15.png)  
 views.py의 login 함수를 위와 같이 수정한다.  
 결국, key=value 값으로 url을 지목해줘야 가는데, key가 next가 되고, valuse가 request.GET.get('next')가 된다.  
 
