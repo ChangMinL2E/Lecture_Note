@@ -180,7 +180,7 @@ python manage.py createsuperuser
 ---
 #####  Login
 - login()
-> login(request, user, backend=None)  
+> `login(request, user, backend=None)`  
 > 인증된 사용자를 로그인 시키는 로직, view 함수에서 사용  
 > 현재 세션에 연결하려는 인증된 사용자가 있는 경우 사용  
 > HttpRequest 객체와 User 객체가 필요  
@@ -233,11 +233,444 @@ def login(request):
 ##### Logout  
 : 로그아웃은 Session을 Delete하는 과정  
 
+- logout()
+> `logout(request)`   
+> HttpRequest 객체를 인자로 받고 반환 값이 없다.  
+> 사용자가 로그인하지 않은 경우 오류를 발생시키지 않는다.  
+> - 2가지 일을 처리함.  
+> 1. 현재 요청에 대한 session data를 DB에서 삭제  
+> 2. 클라이언트의 쿠키에서도 sessionid를 삭제  
+> &Rightarrow; 이는 다른사람이 동일한 웹 브라우저를 사용하여 로그인하고,  
+> 이전 사용자의 세션 데이터에서 엑세스하는 것을 방지하기 위함.  
+
+>![img_5.png](img_5.png)
+>![img_6.png](img_6.png)  
+---
+### Authentication with User  
+User Object 와 User CRUD에 대한 이해  
+- 회원 가입, 회원 탈퇴, 회원정보 수정, 비밀번호 변경  
+
+##### 회원 가입  
+: 회원가입은 User를 Create하는 것, UserCreationForm built-in form을 사용  
+
+- UserCreationForm  
+> 주어진 username과 password로 권한이 없는 새 user를 생성하는 ModelForm  
+> - 3개의 필드를 가진다.  
+>   1) username
+>   2) password1
+>   3) password2  
+
+> 먼저 urls.py, signup.html, views.py 작성하고,  
+> base.html에 회원가입 링크 작성했다.  
+> 회원가입 로직까지 작성하였다.
+> 
+>![img_7.png](img_7.png)  
+> 위와 같이 views.py에서 함수 만들고, base.html, signup.html을 꾸미고, 회원가입 하면,  
+> ![img_8.png](img_8.png)  
+> 과 같은 에러가 뜬다.
+
+- 에러 해결  
+
+>UserCreationForm은 ModelForm이다.  
+>ModelForm 내부에서는 새로만든 accounts.User가 아닌 auth.User로 계속 생성된다.  
+>이는 class 내부를 뜯어보면, 
+>![img_9.png](img_9.png)  
+>와 같이 model이 User로 지정되어 있다.  
+>
+>새로 클래스를 만들어서 정의해준다.
+>![img_10.png](img_10.png)  
+>이때, 위와 같이 직접 참조 해줄수는 있지만, 이를 권장하지 않고 함수를 지원해줘서 아래와 같이 코드를 작성 한다.
+>![img_11.png](img_11.png)  
+> ##### Django는 User를 직접참조하는것을 좋아하지 않는다.  
+```python
+# views.py  
+# create 와 유사하다.
+def signup(request):
+    if request.method == 'POST':
+        form = CustomUserCreationForm(request.POST) # 만들어준 클래스로 변경
+        if form.is_valid(): 
+            form.save() # 유효성 검증 되면 저장.
+            return redirect('articles:index')
+    else:
+        form = CustomUserCreationForm()
+    context = {
+        'form': form,
+    }
+    return render(request, 'accounts/signup.html', context)
+```
+---
+### Custom user & Built-in auth forms  
+- AbstractBaseUser의 모든 subclass와 호환되는 forms
+> - 아래 Form 클래스는 User 모델을 대체하더라도 커스텀 하지 않아도 사용가능  
+>   1. AuthenticationForm
+>   2. SetPasswordForm
+>   3. PasswordChangeForm
+>   4. AdminPasswordChangeForm  
+> 
+> &rightarrow; 기존 User 모델을 참조하는 Form이 아니다.  
+
+> - 커스텀 유저 모델을 사용하려면 다시 작성하거나 확장해야 하는 forms  
+>   1. UserCreationForm # 회원가입  
+>   2. UserChangeForm # 회원정보수정  
+> 
+> &Rightarrow; 두 form 모두 class Meta: model = User 가 등록된 form이기 때문에 반드시 커스텀(확장)해야 한다.
+
+- 미리 커스텀 하기.
+```python
+# accounts/forms.py
+from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 
 
+class CustomUserCreationForm(UserCreationForm): # 새로 클래스를 정의하겠다.
 
+    class Meta(UserCreationForm.Meta):
+        model = get_user_model()
 
+class CustomUserChangeForm(UserChangeForm):
+    class Meta(UserChangeForm.Meta):
+        model = get_user_model()
+``` 
   
+- get_user_model()  
+    - "현재 프로젝트에서 활성화된 사용자 모델"을 반환  
+    - 직접 참조하지 않는 이유  
+    : 기존 User 가 아닌 모델을 커스텀 한 상황에서는 커스텀 User 모델을 자동으로 반환해주기 때문이다.
+    - Django는 User 클래스를 직접 참조하는 대신 `get_user_model()`을 사용해 참조해야 한다.  
+    
+
+- 회원가입 후에 로그인 상태
+![img_12.png](img_12.png)  
+  
+---
+##### 회원탈퇴  
+
+```python
+# urls.py
+urlpatterns = [
+    path('delete/',views.delete, name='delete'),]
+
+# views.py
+def delete(request): # 지금 request밖에 없고, 거기에 정보가 있다.
+    request.user.delete()
+    return redirect('articles:index')
+
+# base.html
+<form action=" {% url 'accounts:delete' %} " method="POST">
+  {% csrf_token %}
+  <input type="submit" value="회원탈퇴">
+</form>
+```
+&Rightarrow; 회원탈퇴시 user는 없어지지만, Session이 남아있는다.  
+```python
+# 꼭 삭제후, 로그아웃을 한다. 로그아웃을 먼저하면 삭제할 user에 대한 정보를 모르므로 삭제가 안된다.
+
+def delete(request): # 지금 request밖에 없고, 거기에 정보가 있다.
+    request.user.delete()
+    auth_logout(request) # 로그아웃을 하지 않으면, session이 남아있으므로, 로그아웃.
+    return redirect('articles:index')
+```
+---
+##### 회원정보 수정  
+: 회원정보 수정은 User를 Update 하는 것이며 UserChangeForm built-in form을 사용  
+
+- UserChangeForm  
+> - 사용자의 정보 및 권한을 변경하기 위해 admin 인터페이스에서 사용되는 ModelForm  
+> - ModelForm이기 때문에 instance 인자로 기존 user 데이터 정보를 받는 구조 또한 동일하다.  
+> - 이미 이전에 CustomUserChangeForm 확장했기때문에, 사용하자.  
+
+```python
+# urls.py
+path('update/',views.update, name='update'),]
+
+# views.py
+def update(request):
+    if request.method == 'POST':
+        pass
+    else:
+        form = CustomUserChangeForm(instance= request.user) # 변경은 instance
+    context = {
+        'form': form,
+    }
+    return render(request, 'accounts/update.html', context)
+
+# update.html 생성
+
+# base.html
+
+<a href=" {% url 'accounts:update' %} ">회원정보수정</a>
+```
+홈페이지 확인하면, 권한마저 줄수있는 문제점 발생  
+: admin 인터페이스에서 사용되는 ModelForm  
+&rightarrow; CustomUserChangeForm의 fields 제한.  
+```python
+# accounts/forms.py  
+
+class CustomUserChangeForm(UserChangeForm):
+
+    class Meta(UserChangeForm.Meta):
+        model = get_user_model()
+        fields = ('email','first_name','last_name',)
+```
+이때, 비밀번호 변경은 다른 곳에서 변경  
+
+```python
+# update 함수
+def update(request):
+    if request.method == 'POST':
+        form = CustomUserChangeForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect('articles:index')
+    else:
+        form = CustomUserChangeForm(instance= request.user) # 변경은 instance
+    context = {
+        'form': form,
+    }
+    return render(request, 'accounts/update.html', context)
+```
+---
+##### 비밀번호 변경  
+- PasswordChangeForm  
+    - 사용자가 비밀번호를 변경할 수 있도록 하는 Form
+    - 이전 비밀번호를 입력하여 비밀번호 변경 가능  
+    - 이전 비밀번호를 입력하지 않고, 설정할 수 있는 `SetPasswordForm`을 상속받는 서브 클래스  
+    
+
+- 처음으로 함수와 url이 이름과 다르게 만든다.
+```python
+# urls.py
+path('password/', views.change_password, name='change_password'),
+
+# views.py
+def change_password(request):
+    if request.method == 'POST':
+        pass
+    else:
+        form = PasswordChangeForm(request.user) # 기존과 다르게 user 인자를 받는다.
+    context = {
+        'form': form,
+    }
+    return render(request, 'accounts/change_password.html',context)
+
+# change_password.html도 생성
+```
+
+password 함수 로직 작성  
+```python
+def change_password(request):
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('articles:index')
+    else:
+        form = PasswordChangeForm(request.user) # 기존과 다르게 user 인자를 받는다.
+    context = {
+        'form': form,
+    }
+    return render(request, 'accounts/change_pass
+```
+비밀번호 변경후 로그아웃이 된다.  
+&rightarrow; 세션 무효화가 된다.
+
+- update_session_auth_hash()  
+    - update_session_auth_hash(request, user)
+    - 현재 요청과 새 session data가 파생 될 업데이트 된 사용자 객체를 가져오고, session data를 적절하게 업데이트 해준다.  
+    - 암호가 변경되어도 로그아웃 되지 않도록 새로운 password의 session data로 session 업데이트  
+    
+```python
+from django.contrib.auth import update_session_auth_hash
+
+def change_password(request):
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            form.save()
+            update_session_auth_hash(request, form.user) # 호출하고 넣기보다는, 반환값으로 공식문서에서 사용
+            return redirect('articles:index')
+    else:
+        form = PasswordChangeForm(request.user) # 기존과 다르게 user 인자를 받는다.
+    context = {
+        'form': form,
+    }
+    return render(request, 'accounts/change_password.html',context)
+```
+---
+### Limiting access to logged-in users  
+: 로그인 사용자에 대한 접근 제한 (2가지)  
+1. The raw way  
+    - `is_authenticated` attribute
+    
+2. The `login_required` decorator  
+
+- is_authenticated  
+> User model의 속성중 하나  
+> 사용자가 인증 되었는지 여부를 알 수 있는 방법  
+> User 인스턴스에 대해 항상 True  
+> AnonymousUser에 대해서 항상 False  
+> 일반적으로 request.user에서 속성 사용  
+> &rightarrow; request.user.is_authenticated
+> 로그인/ 비로그인만 확인하고, 다른 상태에 대해서는 확인하지 않는다.  
+> ex) 권한, 활성화 상태, 유효한 세션을 확인하지 않음.  
+
+- base.html 정리  
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-gH2yIJqKdNHPEq0n4Mqa/HGKIhSkIHeL5AyhkYV8i59U5AR6csBvApHHNl/vI1Bx" crossorigin="anonymous">  <title>Document</title>
+</head>
+<body>
+  <div class="container">
+    {% if request.user.is_authenticated %}
+      <h3>{{ user }}</h3>
+      <form action=" {% url 'accounts:logout' %} " method="POST">
+        {% csrf_token %}
+        <input type="submit" value="Logout"> 
+      </form>
+      <form action=" {% url 'accounts:delete' %} " method="POST">
+        {% csrf_token %}
+        <input type="submit" value="회원탈퇴">
+      </form>
+      <a href=" {% url 'accounts:update' %} ">회원정보수정</a>
+    {% else %}
+      <a href="{% url 'accounts:login' %}">Login</a>
+      <a href=" {% url 'accounts:signup' %} ">Signup</a>
+    
+    {% endif %}
+    <hr>
+    {% block content %}
+    {% endblock content %}
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-A3rJD856KowSb7dwlZdYEkO39Gagi7vIsF0jrRAoQmDKKtQBHUuLZ9AsSv4jD4Xa" crossorigin="anonymous"></script>
+</body>
+</html>
+```
+![img_13.png](img_13.png)  
+![img_14.png](img_14.png)  
+와 같이 정리되지만, login해도, url만 알면 login 페이지로 넘어올 수 있다.  
+&rightarrow; 근본적으로 정리된 것은 아니다.  
+
+```python
+# views.py
+def login(request):
+    if request.user.is_authenticated: # 인증된 사용자라면,
+        return redirect('articles:index')
+    ...
+```
+위와 같이 제일 먼저 if 문으로 넘어가지 않게 설정해주면 된다.  
+
+logout 상태에서 create 안보이게 처리  
+```html
+<h1>Articles</h1>
+{% if request.user.is_authenticated %}
+<a href="{% url 'articles:create' %}">CREATE</a>
+{% endif %}
+```
+---
+- login_required  
+@login_required를 사용
+  
+```python
+# articles/views.py
+from django.contrib.auth.decorators import login_required  
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def create(request):
+    ...
+
+@login_required
+@require_POST
+def delete(request, pk):
+    ...
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def update(request, pk):
+    ...
+```  
+- decorator 페이지 이동시  
+로그인 상태로 decorator가 붙어있는 페이지를 접속 &rightarrow; 정상적으로 함수 실행  
+비로그인 상태로 접속 &rightarrow; /accounts/login/ 으로 이동 (기본값)  
+
+이때, url 확인시 /accounts/login/?next=/...으로 되어있고,  
+로그인해도, redirect로 가지 않는다.  
+&Rightarrow; form의 action을 비워준다.  
+
+![img_15.png](img_15.png)
+views.py의 login 함수를 위와 같이 수정한다.  
+결국, key=value 값으로 url을 지목해줘야 가는데, key가 next가 되고, valuse가 request.GET.get('next')가 된다.  
+
+---
+- 두 데코레이더 에러  
+```python
+# articles/views.py
+
+@login_required
+@require_POST
+def delete(request, pk):
+    article = Article.objects.get(pk=pk)
+    article.delete()
+    return redirect('articles:index')
+```
+비로그인 상태에서 delete 요청시, login 페이지로 온다.  
+login 성공시 @require_POST를 처리하는데, @login_required가 GET 방식을 사용.  
+&Rightarrow; 405 error 발생  
+
+- 해결 방법  
+```python
+@require_POST
+def delete(request, pk):
+    if request.user.is_authenticated:
+        article = Article.objects.get(pk=pk)
+        article.delete()
+    return redirect('articles:index')
+```
+POST method만 허용하는 delete 함수는 내부에서 is_authenticated로 해결  
+다른 함수는 전부 가능  
+
+&rightarrow; articles/views.py에만 데코레이터 및 속성 값 적용했다.  
+
+&Rightarrow; accounts/views.py에도 적용시키기.  
+```python
+# accounts/views.py
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST, require_http_methods
+
+@require_http_methods(['GET','POST'])
+def login(request):
+    ...
+
+@require_POST
+def logout(request):
+    ...
+
+@require_http_methods(['GET','POST'])
+def signup(request):
+    ...
+
+@login_required
+@require_http_methods(['GET','POST'])
+def update(request):
+    ...
+
+@login_required
+@require_http_methods(['GET','POST'])
+def change_password(request):
+    ...
+```
+
+
+
+
+
+
+
 
 
 
