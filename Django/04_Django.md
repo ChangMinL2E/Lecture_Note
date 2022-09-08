@@ -252,7 +252,7 @@ def edit(request, pk):
 
 def update(request, pk):
     article = Article.objects.get(pk=pk)
-    form = ArticleForm(request.POST, instace=article)
+    form = ArticleForm(request.POST, instance=article)
     if form.is_valid(): # 유효성 검사
         form.save() # 데이터 저장 후
         return redirect('articles:detail', article.pk) # 상세 페이지로 리다이렉트
@@ -424,7 +424,7 @@ def delete(request, pk):
     if request.method == "POST":
         article.delete()
         return redirect('articles:index')
-    return redirect('articles:detial', article.pk)
+    return redirect('articles:detail', article.pk)
 ```
 
 ---
