@@ -30,7 +30,7 @@
 
 from django import forms 
 
-class ArticleForm(forms.ModelForm):
+class ArticleForm(forms.Form):
     title = forms.CharField(max_length=10)
     content = forms.CharField() # model field와 달리 TextField가 존재 X
 ```
