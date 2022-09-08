@@ -233,7 +233,6 @@ def edit(request, pk):
 - edit - template  
 ```html
 {% extends 'base.html' %}
-{% load bootstrap5 %}
 
 {% block content %}
   <h1>EDIT</h1>
