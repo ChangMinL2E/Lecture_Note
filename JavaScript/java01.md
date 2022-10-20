@@ -452,6 +452,110 @@ callback 함수
 
 ![img_21.png](img_21.png)  
 
+- forEach  
+array.forEach(callback(element[, index[, array]]))  
+: 인자로 주어지는 함수를 배열의 각 요소에 대해 한 번씩 실행  
+  
+![img_22.png](img_22.png)  
+
+- map  
+array.map(callback(element[, index[, array]]))  
+콜백 함수를 마찬가지로 한 번씩 실행  
+콜백 함수의 반환 값을 요소로 하는 새로운 배열 반환  
+  
+![img_23.png](img_23.png)  
+
+- filter  
+마찬가지로 한 번 씩 실행  
+  콜백 함수의 반환 값이 참인 요소들만 모아서 새로운 배열 반환  
+  
+![img_24.png](img_24.png)  
+
+- reduce  
+array.reduce(callback(acc,element[, index[, array]])[,initialValue])  
+인자로 주어지는 함수를 배열의 각 요소에 대해 한 번씩 실행해서, 하나의 결과 값을 반환  
+즉, 배열을 하나의 값으로 계싼하는 동작이 필요할 때 사용  
+  - acc  
+  : 이전 callback 함수의 반환 값이 누적되는 변수  
+    
+  - initialValue(optional)  
+  : 최초 callback 함수 호출 시 acc에 할당되는 값, default 값은 배열 첫번째 값  
+    
+![img_25.png](img_25.png)  
+![img_26.png](img_26.png)  
+
+- find  
+array.find(callback(element[, index[, array]]))  
+  배열의 각 요소에 대해 콜백 함수를 한 번씩 실행  
+  콜백 함수의 반환 값이 true, 조건을 만족하는 첫번째 요소 반환  
+  찾는 값 없으면 `undefined` 반환  
+  
+![img_27.png](img_27.png)  
+
+- some  
+array.some(callback(element[, index[, array]]))  
+  배열의 요소 중 하나라도 주어진 판별 함수를 통과하면 true 반환  
+  모든 요소가 통과 못하면 false  
+  빈 배열은 항상 false  
+  
+![img_28.png](img_28.png)  
+
+- every  
+array.every(callback(element[, index[, array]]))  
+  배열의 모든 요소가 주어진 판별에 통과하면 true  
+  
+![img_29.png](img_29.png)  
+
+- 배열 순회 비교  
+
+![img_30.png](img_30.png)  
+
+---  
+#### 객체(Object)  
+: 속성(property) 집합, 중괄호 내부에 key와 value의 쌍으로 표현  
+- key  
+: 문자열 타입만 가능  
+  key 이름에 띄어쓰기 등의 구분자가 있으면 따옴표로 묶어서 표현  
+  
+- value  
+: 모든 타입(함수 포함) 가능  
+  
+- 객체 요소 접근  
+: 점(.) 또는 대괄호 ([])로 가능  
+  key 이름에 띄어쓰기 같은 구분자가 있으면 대괄호 접근만 가능  
+  
+![img_31.png](img_31.png)  
+
+---  
+### 객체 관련 문법  
+- ES6 문법 익히기  
+  1. 속석명 축약  
+  2. 메서드명 축약  
+  3. 계산된 속성명 사용하기  
+  4. 구조 분해 할당  
+  5. 객체 전개 구문(Spread Operator)  
+  
+![img_32.png](img_32.png)  
+![img_33.png](img_33.png)  
+![img_34.png](img_34.png)  
+![img_35.png](img_35.png)  
+![img_36.png](img_36.png)  
+
+- JSON  
+:JavaScript Object Notation  
+  key - Value 형태로 이루어진 자료 표기법  
+  JSON을 Object로 사용하기 위해서는 변환 작업이 필요  
+  ![img_37.png](img_37.png)  
+  
+배열은 객체다.  
+키와 속성들을 담고 있는 참조 타입의 객체  
+배열은 인덱스를 키로 가지며 length property를 갖는 특수한 객체  
+![img_38.png](img_38.png)  
+
+
+
+
+
 
 
 
